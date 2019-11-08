@@ -6,12 +6,10 @@ import NavCreate from "../components/Nav/NavCreate";
 import NavEdit from "../components/Nav/NavEdit";
 import Cate from "../components/Cate/Cate";
 import CateCreate from "../components/Cate/CateCreate";
-import Product  from '../components/Pro/Product';
-import ProductEdit from "../components/Pro/ProductEdit";
+import Product  from '../components/Pro/Product'
 import ProductCreate from "../components/Pro/ProductCreate";
 import User from "../views/User";
 import Login from "../components/User/Login";
-import Register from "../components/User/Register";
 
 Vue.use(VueRouter)
 
@@ -60,20 +58,10 @@ const routes = [
     component:ProductCreate
   },
   {
-    path:'/Product/Edit',
-    name:'/Product/Edit',
-    component:ProductEdit
-  },
-  {
     path:'/Login',
     name:'/Login',
     component:Login
   },
-  {
-    path:'/Register',
-    name:'/Register',
-    component:Register
-  }
 ]
 
 const router = new VueRouter({
