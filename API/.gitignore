@@ -10,12 +10,13 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
-##ignore this file##
 /target/
 .classpath
 .project
 .settings
-##filter databfile、sln file##
+.idea
+.*
+!/.gitignore
 *.idea
 *.iml
 *.mdb
