@@ -11,10 +11,6 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 /target/
-.classpath
-.project
-.setting
 .idea
 .*
 !/.gitignore
-*.idea
