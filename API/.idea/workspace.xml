@@ -121,7 +121,7 @@
   <component name="ProjectId" id="1SaThpomPv8ZFBiB3u2gBftWH4Y" />
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../vueapi" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -187,6 +187,7 @@
       <workItem from="1572916294104" duration="18393000" />
       <workItem from="1573002552825" duration="10267000" />
       <workItem from="1573089227585" duration="23271000" />
+      <workItem from="1573177373975" duration="603000" />
     </task>
     <servers />
   </component>
