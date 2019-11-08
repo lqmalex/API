@@ -18,51 +18,51 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::middleware('Authentication')->group(function () {
-    Route::get('/nav/getNav', 'Nav\NavController@getNav');
+    Route::get('/nav/getNav', 'NavController@getNav');
 
-    Route::post('/nav/del', 'Nav\NavController@del');
+    Route::post('/nav/del', 'NavController@del');
 
-    Route::match(['get', 'post'], '/nav/edit', 'Nav\NavController@edit');
+    Route::match(['get', 'post'], '/nav/edit', 'NavController@edit');
 
-    Route::post('/nav/create', 'Nav\NavController@create');
+    Route::post('/nav/create', 'NavController@create');
 
-    Route::get('/product/getProduct', 'Pro\ProController@getProduct');
+    Route::get('/product/getProduct', 'ProductController@getProduct');
 
-    Route::get('/cate/getCate', 'Cate\CateController@getCate');
+    Route::get('/cate/getCate', 'CateController@getCate');
 
     Route::post('/upload', 'PreController@upload');
 
     Route::post('/move','PreController@moveImage');
 
-    Route::post('/cate/delete', 'Cate\CateController@delete');
+    Route::post('/cate/delete', 'CateController@delete');
 
-    Route::match(['get', 'post'], '/cate/edit', 'Cate\CateController@edit');
+    Route::match(['get', 'post'], '/cate/edit', 'CateController@edit');
 
-    Route::post('/cate/create', 'Cate\CateController@create');
+    Route::post('/cate/create', 'CateController@create');
 
-    Route::post('/product/delete', 'Pro\ProController@delete');
+    Route::post('/product/delete', 'ProductController@delete');
 
-    Route::match(['get', 'post'], '/product/edit', 'Pro\ProController@edit');
+    Route::match(['get', 'post'], '/product/edit', 'ProductController@edit');
 
-    Route::post('/product/create', 'Pro\ProController@create');
+    Route::post('/product/create', 'ProductController@create');
 
-    Route::get('/product/getTag', 'Pro\ProController@getTag');
+    Route::get('/product/getTag', 'ProductController@getTag');
 
-    Route::get('/product/getSku', 'Pro\ProController@getSku');
+    Route::get('/product/getSku', 'ProductController@getSku');
 
-    Route::post('/product/changeShelf', 'Pro\ProController@changeShelf');
+    Route::post('/product/changeShelf', 'ProductController@changeShelf');
 
-    Route::get('/product/getProducts', 'Pro\ProController2@getProduct2');
+    Route::get('/product/getProducts', 'ProductController2@getProduct2');
 
-    Route::post('/product/creates', 'Pro\ProController2@create');
+    Route::post('/product/creates', 'ProductController2@create');
 
-    Route::get('/Authentication', 'User\UserController@Authentication');
+    Route::get('/Authentication', 'UserController@Authentication');
 
-    Route::post('/Out', 'User\UserController@out');
+    Route::post('/Out', 'UserController@out');
 
-    Route::post('/tagDel','Pro\ProController@tagDelete');
+    Route::post('/tagDel','ProductController@tagDelete');
 });
 
-Route::post('/Register', 'User\UserController@Register');
+Route::post('/Register', 'UserController@Register');
 
-Route::post('/Login', 'User\UserController@Login');
+Route::post('/Login', 'UserController@Login');

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Cate;
+namespace App\Http\Controllers;
 
 use App\CateModel;
 use App\Http\Controllers\Controller;
@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 
 class CateController extends Controller
 {
+    private $preg = "/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/";
+    private $page = 5;
 
     /**
      * 分类数据
@@ -22,12 +24,12 @@ class CateController extends Controller
             $model = $model->where('name', 'like', '%' . $request->name . '%');
         }
 
-        $perPage = $request->total === null ? 5 : 0;
+        $perPage = $request->total === null ? $this->page : 0;
         $columns = ['*'];
         $pageName = 'page';
         $currentPage = $request->page === null ? 1 : $request->page;
         if ($request->all === null) {
-            $list = $model->where('status', '!=', '0')->paginate($perPage, $columns, $pageName, $currentPage);
+            $list = $model->where('status', '!=', CateModel::STATUS_NO)->paginate($perPage, $columns, $pageName, $currentPage);
         } else {
             $list = $model->paginate($perPage, $columns, $pageName, $currentPage);
         }
@@ -45,7 +47,7 @@ class CateController extends Controller
      */
     public function delete(Request $request)
     {
-        $res = (new CateModel())->where('id', '=', $request->id)->update(['status' => '0']);
+        $res = (new CateModel())->where('id', '=', $request->id)->update(['status' => CateModel::STATUS_NO]);
 
         if ($res) {
             $info = [
@@ -77,7 +79,7 @@ class CateController extends Controller
                 ];
             }
 
-            if (preg_match("/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/", $request->name)) {
+            if (preg_match($this->preg, $request->name)) {
                 return [
                     'status' => false,
                     'msg' => '不允许含有特殊字符'
@@ -118,7 +120,7 @@ class CateController extends Controller
 
             return $info;
         } else {
-            $data = (new CateModel())->where('id', '=', $request->id)->where('status', '!=', '0')->get();
+            $data = (new CateModel())->where('id', '=', $request->id)->where('status', '!=', CateModel::STATUS_NO)->get();
 
             if (count($data) > 0) {
                 $info = [
@@ -150,7 +152,7 @@ class CateController extends Controller
             ];
         }
 
-        if (preg_match("/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/", $request->name)) {
+        if (preg_match($this->preg, $request->name)) {
             return [
                 'status' => false,
                 'msg' => '不允许含有特殊字符'

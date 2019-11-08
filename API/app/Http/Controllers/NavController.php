@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Nav;
+namespace App\Http\Controllers;
 
 use App\CateModel;
 use App\Http\Controllers\Controller;
@@ -15,6 +15,8 @@ use mysql_xdevapi\Exception;
 
 class NavController extends Controller
 {
+    private $preg = "/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/";
+
     /**
      * 查询导航
      * @return false|string
@@ -26,7 +28,7 @@ class NavController extends Controller
         $columns = ['*'];
         $pageName = 'page';
         $currentPage = $request->page === null ? 1 : $request->page;
-        $res = $NavModel->where('status', '!=', '0')->paginate($perPage, $columns, $pageName, $currentPage);
+        $res = $NavModel->where('status', '!=', NavModel::STATUS_NO)->paginate($perPage, $columns, $pageName, $currentPage);
 
         $info = [
             'status' => true,
@@ -42,7 +44,7 @@ class NavController extends Controller
      */
     public function del(Request $request)
     {
-        $res = (new NavModel())->where('id', '=', $request->id)->update(['status' => 0]);
+        $res = (new NavModel())->where('id', '=', $request->id)->update(['status' => NavModel::STATUS_NO]);
 
         if ($res > 0) {
             $info = [
@@ -56,7 +58,6 @@ class NavController extends Controller
 
         return $info;
     }
-
 
     /**
      * 编辑
@@ -80,7 +81,7 @@ class NavController extends Controller
                 ];
             }
 
-            if (preg_match("/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/", $request->title)) {
+            if (preg_match($this->preg, $request->title)) {
                 return [
                     'status' => false,
                     'msg' => '不允许含有特殊字符',
@@ -134,10 +135,9 @@ class NavController extends Controller
                 ];
             }
 
-
             return $info;
         } else {
-            $res = (new NavModel())->where('id', '=', $request->id)->where('status', '!=', '0')->get();
+            $res = (new NavModel())->where('id', '=', $request->id)->where('status', '!=', NavModel::STATUS_NO)->get();
 
             return $res;
         }
@@ -164,7 +164,7 @@ class NavController extends Controller
             ];
         }
 
-        if (preg_match("/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/", $request->title)) {
+        if (preg_match($this->preg, $request->title)) {
             return [
                 'status' => false,
                 'msg' => '不允许含有特殊字符',

@@ -1,31 +1,33 @@
 <?php
 
-namespace App\Http\Controllers\Pro;
+namespace App\Http\Controllers;
 
 use App\CateModel;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\PreController;
 use App\NavModel;
 use App\ProductModel;
-use App\skuModel;
-use App\tagModel;
+use App\SkuModel;
+use App\TagModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use \Exception;
 
-class ProController extends Controller
+class ProductController extends Controller
 {
     private $product;
     private $tag;
     private $sku;
+    private $preg = "/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/";
+    private $page = 5;
 
     public function __construct()
     {
         $this->product = new ProductModel();
-        $this->tag = new tagModel();
-        $this->sku = new skuModel();
+        $this->tag = new TagModel();
+        $this->sku = new SkuModel();
     }
 
     /**
@@ -39,14 +41,14 @@ class ProController extends Controller
             $this->product = $this->product->where('name', 'like', '%' . $request->name . '%');
         }
 
-        $perPage = $request->total === null ? 5 : 0;
+        $perPage = $request->total === null ? $this->page : 0;
         $columns = ['*'];
         $pageName = 'page';
         $currentPage = $request->page === null ? 1 : $request->page;
-        $res = $this->product->where('status', '!=', '0')->with(['tag' => function ($query) {
-            $query->where('status', '!=', '0');
+        $res = $this->product->where('status', '!=', ProductModel::STATUS_DEL)->with(['tag' => function ($query) {
+            $query->where('status', '!=', TagModel::STATUS_NO);
         }, 'sku' => function ($query) {
-            $query->where('status', '!=', '0');
+            $query->where('status', '!=', SkuModel::STATUS_NO);
         }])->paginate($perPage, $columns, $pageName, $currentPage);
 
         return [
@@ -84,7 +86,7 @@ class ProController extends Controller
      */
     public function delete(Request $request)
     {
-        $res = (new ProductModel())->where('id', '=', $request->id)->update(['status' => 0]);
+        $res = (new ProductModel())->where('id', '=', $request->id)->update(['status' => ProductModel::STATUS_DEL]);
 
         if ($res) {
             $info = [
@@ -104,7 +106,7 @@ class ProController extends Controller
 
     public function tagDelete(Request $request)
     {
-        $res = $this->tag->where('id', '=', $request->id)->update(['status' => 0]);
+        $res = $this->tag->where('id', '=', $request->id)->update(['status' => TagModel::STATUS_NO]);
 
         if ($res) {
             $info = [
@@ -143,7 +145,7 @@ class ProController extends Controller
                         ];
                     }
 
-                    if (preg_match("/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/", $arr[$k]['name'])) {
+                    if (preg_match($this->preg, $arr[$k]['name'])) {
                         return [
                             'status' => false,
                             'msg' => '不允许含有特殊字符'
@@ -390,7 +392,7 @@ class ProController extends Controller
                     throw new Exception('名称不能为空');
                 }
 
-                if (preg_match("/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/", $arr['name'])) {
+                if (preg_match($this->preg, $arr['name'])) {
                     throw new Exception('不允许含有特殊字符');
                 }
 
@@ -445,7 +447,6 @@ class ProController extends Controller
                         if (!is_numeric($val['price'])) {
                             throw new Exception('售价必须是数字');
                         }
-
 
                         if (!empty($val['quantity']) && !is_numeric($val['quantity'])) {
                             throw new Exception('库存必须为数字');
