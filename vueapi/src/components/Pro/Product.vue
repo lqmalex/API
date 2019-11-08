@@ -2,13 +2,6 @@
   <div class="Product">
     <a-table :columns="columns" :dataSource="dataSource" bordered :pagination="false">
 
-      <template slot="shelf" slot-scope="text,record,index">
-        <a-switch v-if="record.status == 1" checkedChildren="上架" unCheckedChildren="下架" defaultChecked
-                  @change="onChangeShelf(record.id,record.status,record)"/>
-        <a-switch v-else checkedChildren="上架" unCheckedChildren="下架"
-                  @change="onChangeShelf(record.id,record.status,record)"/>
-      </template>
-
       <div
         slot="filterDropdown"
         slot-scope="{ setSelectedKeys, selectedKeys, confirm, clearFilters, column }"
@@ -78,10 +71,10 @@
         </span>&nbsp;&nbsp;
         <a type="primary" @click="showDrawer(index,record.id)">标签</a>&nbsp;&nbsp;
         <a type="primary" @click="showDrawer2(record.category_id,index,record.id)">库存</a>&nbsp;&nbsp;
-        <span v-if="record.editable">
-          <a @click="() => save(record.key,'pro')">执行编辑</a>&nbsp;&nbsp;
-          <a @click="() => cancel(record.key,'pro')">取消编辑</a>
-        </span>
+        <div v-if="record.editable">
+          <a @click="() => save(record.key,'pro')">执行</a>&nbsp;&nbsp;
+          <a @click="() => cancel(record.key,'pro',record)">取消</a>
+        </div>
         <span v-else>
           <a @click="() => edit(record,'pro')">编辑</a>
         </span>
@@ -120,9 +113,10 @@
                 <a-upload
                   :customRequest="(file)=>customRequest(file,record,col,'tag')"
                   listType="picture-card"
+                  :fileList="fileList"
                   @preview="handlePreview"
                   @change="handleChangeFile"
-                  :remove="Remove"
+                  :remove="(file)=>Remove(file)"
                 >
                   <div v-if="fileList.length < 1">
                     <a-icon type="plus"/>
@@ -148,15 +142,20 @@
           </template>
 
           <template slot="operation" slot-scope="text, record, index">
-            <div class="editable-row-operations">
-        <span v-if="record.editable">
-          <a @click="() => save(record.key,'tag')">执行编辑</a>&nbsp;
+            <a-popconfirm
+              v-if="data.length"
+              title="确定删除?"
+              @confirm="() => tagDelete(record)"
+            >
+              <a style="color: red">删除</a>
+            </a-popconfirm>&nbsp;&nbsp;
+            <span v-if="record.editable">
+          <a @click="() => save(record.key,'tag',record)">执行编辑</a>&nbsp;
           <a @click="() => cancel(record.key,'tag')">取消编辑</a>
         </span>
-              <span v-else>
+            <span v-else>
           <a @click="() => edit(record,'tag')">编辑</a>
         </span>
-            </div>
           </template>
         </a-table>
       </div>
@@ -177,6 +176,12 @@
       <a-button type="primary" @click="showModal('sku')">添加库存</a-button>
       <a-table :columns="columns3" :dataSource="dataSource3" bordered rowKey="id"
                :pagination="{pageSize:2,defaultCurrent:1,total:skuOrtagTotal}">
+        <template slot="shelf" slot-scope="text,record,index">
+          <a-switch v-if="record.status == 1" checkedChildren="上架" unCheckedChildren="下架" defaultChecked
+                    @change="onChangeShelf(record.id,record.status,record)"/>
+          <a-switch v-else checkedChildren="上架" unCheckedChildren="下架"
+                    @change="onChangeShelf(record.id,record.status,record)"/>
+        </template>
         <template
           v-for="col in ['original_price', 'price', 'attr1','attr2','attr3','quantity','sort']"
           :slot="col"
@@ -196,14 +201,11 @@
           </div>
         </template>
 
-
         <template slot="operation" slot-scope="text, record, index">
-          <div class="editable-row-operations">
+          <div class="editable-row-operations"  style="width: 40px">
         <span v-if="record.editable">
-          <a @click="() => save(record.key,'sku')">执行编辑</a>
-          <a-popconfirm title="确定取消?" @confirm="() => cancel(record.key,'sku')">
-            <a>取消编辑</a>
-          </a-popconfirm>
+            <a @click="() => save(record.key,'sku')">执行</a>
+            <a @click="() => cancel(record.key,'sku')">取消</a>
         </span>
             <span v-else>
           <a @click="() => edit(record,'sku')">编辑</a>
@@ -239,7 +241,7 @@
           :customRequest="(file)=>customRequest(file,'','','')"
           listType="picture-card"
           @change="({fileList}) => handleChangeFile({fileList})"
-          :remove="Remove"
+          :remove="(file)=>Remove(file)"
         >
           <div v-if="fileList.length < 1">
             <a-icon type="plus"/>
@@ -280,7 +282,7 @@
 
     <!-- 商品描述   -->
     <a-modal
-      title="添加标签"
+      title="描述"
       :visible="ContentVisible"
       @ok="contentOK"
       :confirmLoading="false"
@@ -294,7 +296,6 @@
         @change="onEditorChange($event)">
       </quill-editor>
     </a-modal>
-
   </div>
 </template>
 
@@ -307,6 +308,9 @@
         data() {
             return {
                 ContentVisible: false,
+                cacheData: null,
+                cacheData2: null,
+                cacheData3: null,
                 content: null,
                 editorOption: {},
                 skuOrtagTotal: 0,
@@ -328,11 +332,6 @@
                 previewImage: '',
                 fileList: [],
                 tagType: {
-                    1: "保质期",
-                    2: "促销宣传语",
-                    3: "图片",
-                },
-                tagType2: {
                     1: "保质期",
                     2: "促销宣传语",
                     3: "图片",
@@ -369,6 +368,12 @@
                         key: 'quantity',
                         dataIndex: 'quantity',
                         scopedSlots: {customRender: 'quantity'},
+                    },
+                    {
+                        title: '上/下架',
+                        key: 'shelf',
+                        dataIndex: 'shelf',
+                        scopedSlots: {customRender: 'shelf'},
                     },
                     {
                         title: '排序',
@@ -447,12 +452,6 @@
                         scopedSlots: {customRender: 'sort'},
                     },
                     {
-                        title: '上/下架',
-                        key: 'shelf',
-                        dataIndex: 'shelf',
-                        scopedSlots: {customRender: 'shelf'},
-                    },
-                    {
                         title: '创建时间',
                         key: 'created_at',
                         dataIndex: 'created_at',
@@ -475,11 +474,41 @@
                 ProSort: '',
                 defaulValue: '',
                 searchName: '',
+                num: null,
+                fileKey: null,
+                filePath: null,
             }
         },
         methods: {
+            tagDelete(record) {
+                let data = qs.stringify({
+                    id: record.id,
+                });
+                let num = 0;
+                this.dataSource2.forEach((val, k) => {
+                    if (val.id == record.id) {
+                        num = k;
+                    }
+                });
+
+                delete this.dataSource[this.num].tag[num];
+                this.axios.post(Api.tagDel, data).then((res) => {
+                    if (res.data.status) {
+                        const dataSource2 = [...this.dataSource2];
+                        this.dataSource2 = dataSource2.filter(item => item.key !== record.key);
+                        this.$message.info('删除成功');
+                    } else {
+                        this.$message.error('删除失败');
+                    }
+                });
+            },
             getContent(record) {
                 this.content = record.content;
+                this.dataSource.forEach((val, key) => {
+                    if (val.id == record.id) {
+                        this.num = key;
+                    }
+                });
                 this.ContentVisible = true;
                 this.pid = record.id;
             },
@@ -493,16 +522,19 @@
             contentOK() {
                 let data = JSON.stringify({
                     'pro': {
-                        id: this.pid,
-                        content: this.content,
+                        'content' : {
+                            id: this.pid,
+                            content: this.content,
+                        }
                     }
                 });
 
                 this.axios.post(Api.ProductEdit, data).then((res) => {
                     if (res.data.status) {
+                        this.dataSource[this.num].content = this.content;
                         this.$message.info('修改成功');
                     } else {
-                        this.$message.error('修改失败');
+                        this.$message.error(res.data.msg);
                     }
                 }).catch((err) => {
                     this.$message.error('修改失败');
@@ -523,51 +555,77 @@
                     3: "图片",
                 };
             },
-            handleOk(type) {
-                let pid;
-                let data;
-                if (type == 'tag') {
-                    data = {
-                        pid: this.pid,
-                        tag: {
-                            tag_id: this.TagAddId,
-                            value: this.TagAddValue,
-                        }
-                    };
+            getFile(type) {
+                if (type == 'tag' && this.TagAddId == 3 && this.fileKey != null) {
+                    console.log('aaa');
+                    return new Promise((resolve, reject) => {
+                        this.axios.post(Api.move, qs.stringify({
+                            key: this.fileKey,
+                        })).then((res) => {
+                            resolve(this.TagAddValue = Api.domain + res.data);
+                        });
+                    });
+                } else if (type == 'edit' && this.fileKey != null) {
+                    return new Promise((resolve, reject) => {
+                        this.axios.post(Api.move, qs.stringify({
+                            key: this.fileKey,
+                        })).then((res) => {
+                            resolve(this.filePath = Api.domain + res.data);
+                        });
+                    });
                 } else {
-                    let obj = {
-                        attr1: this.attrValues[0] === undefined ? null : this.attrValues[0],
-                        attr2: this.attrValues[1] === undefined ? null : this.attrValues[1],
-                        attr3: this.attrValues[2] === undefined ? null : this.attrValues[2]
-                    };
+                    return new Promise((resolve, reject) => {
+                        resolve();
+                    });
+                }
+            },
+            handleOk(type) {
+                this.getFile(type).then(() => {
+                    let pid;
+                    let data;
+                    if (type == 'tag') {
+                        data = {
+                            pid: this.pid,
+                            tag: {
+                                tag_id: this.TagAddId,
+                                value: this.TagAddValue,
+                            }
+                        };
+                    } else {
+                        let obj = {
+                            attr1: this.attrValues[0] === undefined ? null : this.attrValues[0],
+                            attr2: this.attrValues[1] === undefined ? null : this.attrValues[1],
+                            attr3: this.attrValues[2] === undefined ? null : this.attrValues[2]
+                        };
 
-                    data = {
-                        pid: this.pid,
-                        sku: {
-                            original_price: this.original_price,
-                            price: this.price,
-                            attr1: obj.attr1,
-                            attr2: obj.attr2,
-                            attr3: obj.attr3,
-                            quantity: this.quantity,
-                            sort: this.sort2,
+                        data = {
+                            pid: this.pid,
+                            sku: {
+                                original_price: this.original_price,
+                                price: this.price,
+                                attr1: obj.attr1,
+                                attr2: obj.attr2,
+                                attr3: obj.attr3,
+                                quantity: this.quantity,
+                                sort: this.sort2,
+                            }
                         }
                     }
-                }
 
-                this.axios.post(Api.ProductCreate, data, {headers: {'Content-Type': 'application/json'}}).then((res) => {
-                    if (res.data.status) {
-                        this.setData('',this.page);
-                        this.$message.info('添加成功');
-                        this.tagVisibleAdd = false;
-                        this.skuVisibleAdd = false;
-                        this.visible = false;
-                        this.visible2 = false;
-                    } else {
-                        this.$message.error('添加失败');
-                        this.tagVisibleAdd = false;
-                        this.skuVisibleAdd = false;
-                    }
+                    this.axios.post(Api.ProductCreate, data, {headers: {'Content-Type': 'application/json'}}).then((res) => {
+                        if (res.data.status) {
+                            this.setData('', this.page);
+                            this.$message.info('添加成功');
+                            this.tagVisibleAdd = false;
+                            this.skuVisibleAdd = false;
+                            this.visible = false;
+                            this.visible2 = false;
+                        } else {
+                            this.$message.error(res.data.msg);
+                            this.tagVisibleAdd = false;
+                            this.skuVisibleAdd = false;
+                        }
+                    });
                 });
             },
             showModal(type) {
@@ -584,7 +642,10 @@
                 type = Number(type);
                 let num = type == 1 ? 2 : 1;
 
-                this.axios.post(Api.ChangeShelf, qs.stringify({id: id, type: num})).then((res) => {
+                this.axios.post(Api.ChangeShelf, qs.stringify({
+                    id: id,
+                    type: num
+                })).then((res) => {
                     if (res.data.status) {
                         record.status = num;
                         this.$message.info('修改成功');
@@ -610,6 +671,8 @@
             },
             Remove() {
                 this.fileList = [];
+                this.fileKey = null;
+                this.filePath = null;
             },
             customRequest(file, record, column, type) {
                 const formData = new FormData();
@@ -635,6 +698,7 @@
                         this.fileList[0].status = 'done';
                         this.fileList[0].url = Api.domain + data.data.fileName;
                         this.previewImage = Api.domain + data.data.fileName;
+                        this.fileKey = data.data.key;
                         if (record != '') {
                             record.tag_id = 3;
                             record.tag_type = this.tagType[3];
@@ -734,6 +798,14 @@
                     case 'tag':
                         newData = [...this.dataSource2];
                         this.tagId = record.tag_id.toString();
+                        if (this.tagId == "3") {
+                            this.fileList[0] = {
+                                uid: "-1",
+                                name: "xxx.png",
+                                status: "done",
+                                url: record.value
+                            }
+                        }
                         this.defaulValue = record.value;
                         target = newData.filter(item => record.key === item.key)[0];
                         if (target) {
@@ -764,6 +836,7 @@
                             delete target.editable;
                             this.dataSource = newData;
                             this.toEdit(type, target);
+                            this.cacheData = newData.map(item => ({...item}));
                         }
                         break;
                     case 'tag':
@@ -772,7 +845,15 @@
                         if (target) {
                             delete target.editable;
                             this.dataSource2 = newData;
-                            this.toEdit(type, target);
+                            if (target.tag_id == 3) {
+                                this.getFile('edit').then(() => {
+                                    target.value = this.filePath;
+                                    this.toEdit(type, target, key);
+                                })
+                            } else {
+                                this.toEdit(type, target, key);
+                            }
+                            this.cacheData = newData.map(item => ({...item}));
                         }
                         break;
                     case 'sku':
@@ -781,14 +862,15 @@
                         if (target) {
                             delete target.editable;
                             this.dataSource3 = newData;
-                            this.toEdit(type, target);
+                            this.toEdit(type, target, key);
+                            this.cacheData = newData.map(item => ({...item}));
                         }
                         break;
                     default:
                         break;
                 }
             },
-            cancel(key, type) {
+            cancel(key, type, record) {
                 var newData;
                 var target;
                 switch (type) {
@@ -796,6 +878,7 @@
                         newData = [...this.dataSource];
                         target = newData.filter(item => key === item.key)[0];
                         if (target) {
+                            Object.assign(target, this.cacheData.filter(item => key === item.key)[0]);
                             delete target.editable;
                             this.dataSource = newData;
                         }
@@ -804,8 +887,12 @@
                         newData = [...this.dataSource2];
                         target = newData.filter(item => key === item.key)[0];
                         if (target) {
+                            Object.assign(target, this.cacheData2.filter(item => key === item.key)[0]);
                             delete target.editable;
                             target.value = this.defaulValue;
+                            this.fileList = [];
+                            this.fileKey = null;
+                            this.filePath = null;
                             this.dataSource2 = newData;
                         }
                         break;
@@ -813,6 +900,7 @@
                         newData = [...this.dataSource3];
                         target = newData.filter(item => key === item.key)[0];
                         if (target) {
+                            Object.assign(target, this.cacheData3.filter(item => key === item.key)[0]);
                             delete target.editable;
                             this.dataSource3 = newData;
                         }
@@ -831,10 +919,10 @@
                         if (res.data.status) {
                             resolve(this.data = res.data.data.data, this.total = res.data.data.total, this.pageSize = res.data.data.per_page);
                         }
-                    }).catch((err)=>{
-                        if(err.response.status == 429) {
+                    }).catch((err) => {
+                        if (err.response.status == 429) {
                             this.$message.error('您操作太快,请稍后重试');
-                        };
+                        }
                     });
                 });
             },
@@ -862,7 +950,7 @@
              */
             getCate() {
                 return new Promise((resolve, reject) => {
-                    this.axios.get(Api.getCate + '?total=0').then((data) => {
+                    this.axios.get(Api.getCate + '?all=0&total=0').then((data) => {
                         if (data.data.status) {
                             resolve(this.cateArr = data.data.data.data);
                         }
@@ -874,8 +962,9 @@
              * @param type
              * @param target
              */
-            toEdit(type, target) {
+            toEdit(type, target, key) {
                 let data;
+                let num2;
                 switch (type) {
                     case 'pro':
                         data = JSON.stringify({
@@ -888,6 +977,16 @@
                         });
                         break;
                     case 'tag':
+                        this.dataSource2.forEach((val, k) => {
+                            if (val.key == key) {
+                                num2 = k;
+                            }
+                        });
+
+                        if (this.fileList.length != 0 && this.fileKey === null) {
+                            target.value = this.fileList[0].url;
+                        }
+
                         data = JSON.stringify({
                             'tag': {
                                 id: target.id,
@@ -895,8 +994,16 @@
                                 value: target.value,
                             }
                         });
+
+                        this.fileList = [];
                         break;
                     case 'sku':
+                        this.dataSource3.forEach((val, k) => {
+                            if (val.key == key) {
+                                num2 = k;
+                            }
+                        });
+
                         data = JSON.stringify({
                             'sku': {
                                 id: target.id,
@@ -918,8 +1025,22 @@
                 this.axios.post(Api.ProductEdit, data, {headers: {'Content-Type': 'application/json'}}).then((res) => {
                     if (res.data.status) {
                         this.$message.info('编辑成功');
+                        this.fileKey = null;
+                        this.fileList = [];
+                        this.filePath = null;
+                        if (type == 'tag') {
+                            this.dataSource[this.num].tag[num2].tag_id = target.tag_id;
+                            this.dataSource[this.num].tag[num2].value = target.value;
+                        } else if (type == 'sku') {
+                            this.dataSource[this.num].sku[num2].original_price = target.original_price;
+                            this.dataSource[this.num].sku[num2].price = target.price;
+                            this.dataSource[this.num].sku[num2].quantity = target.quantity;
+                            this.dataSource[this.num].sku[num2].attr1 = target.attr1;
+                            this.dataSource[this.num].sku[num2].attr2 = target.attr2;
+                            this.dataSource[this.num].sku[num2].attr3 = target.attr3;
+                        }
                     } else {
-                        this.$message.error('编辑失败');
+                        this.$message.error(res.data.msg);
                     }
                 }).catch((err) => {
                     this.$message.error('编辑失败');
@@ -930,6 +1051,7 @@
              * @param index
              */
             showDrawer(index, id) {
+                this.num = index;
                 this.skuOrtagTotal = 0;
                 this.pid = id;
                 let arr = this.dataSource[index].tag;
@@ -939,13 +1061,14 @@
                         key: val.id,
                         id: val.id,
                         tag_id: val.tag_id,
-                        tag_type: this.tagType2[val.tag_id],
+                        tag_type: this.tagType[val.tag_id],
                         value: val.value,
                         created_at: val.created_at,
                         updated_at: val.updated_at,
                     }
 
                     this.dataSource2.push(obj);
+                    this.cacheData2 = this.dataSource2.map(item => ({...item}));
                 });
 
                 this.skuOrtagTotal = this.dataSource2.length;
@@ -957,6 +1080,7 @@
              * @param index
              */
             showDrawer2(id, index, pid) {
+                this.num = index;
                 this.skuOrtagTotal = 0;
                 this.pid = pid;
                 let arr = this.dataSource[index].sku;
@@ -1017,6 +1141,12 @@
 
                 this.columns3.push(
                     {
+                        title: '上/下架',
+                        key: 'shelf',
+                        dataIndex: 'shelf',
+                        scopedSlots: {customRender: 'shelf'},
+                    },
+                    {
                         title: '创建时间',
                         key: 'created_at',
                         dataIndex: 'created_at',
@@ -1045,12 +1175,14 @@
                         original_price: val.original_price,
                         price: val.price,
                         quantity: val.quantity,
+                        status: val.status,
                         sort: val.sort,
                         created_at: val.created_at,
                         updated_at: val.updated_at,
                     }
 
                     this.dataSource3.push(obj);
+                    this.cacheData3 = this.dataSource3.map(item => ({...item}));
                 });
 
                 this.skuOrtagTotal = this.dataSource3.length;
@@ -1066,7 +1198,6 @@
                 this.getData(name, page).then(() => {
                     this.getCate().then(() => {
                         this.data.forEach((val, key) => {
-                            ;
                             this.cateArr.forEach((v) => {
                                 if (v.id == val.category_id) {
                                     this.data[key].key = val.id;
@@ -1076,9 +1207,10 @@
                         });
 
                         this.dataSource = this.data;
+                        this.cacheData = this.dataSource.map(item => ({...item}));
                     });
                 });
-            }
+            },
         },
         created() {
             this.setData();

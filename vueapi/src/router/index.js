@@ -9,7 +9,9 @@ import CateCreate from "../components/Cate/CateCreate";
 import Product  from '../components/Pro/Product';
 import ProductEdit from "../components/Pro/ProductEdit";
 import ProductCreate from "../components/Pro/ProductCreate";
-
+import User from "../views/User";
+import Login from "../components/User/Login";
+import Register from "../components/User/Register";
 
 Vue.use(VueRouter)
 
@@ -61,6 +63,16 @@ const routes = [
     path:'/Product/Edit',
     name:'/Product/Edit',
     component:ProductEdit
+  },
+  {
+    path:'/Login',
+    name:'/Login',
+    component:Login
+  },
+  {
+    path:'/Register',
+    name:'/Register',
+    component:Register
   }
 ]
 

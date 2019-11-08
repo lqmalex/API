@@ -16,7 +16,7 @@
           @preview="handlePreview"
           @change="handleChange"
           :fileList="fileList"
-          :remove="Remove"
+          :remove="(file)=>Remove(file)"
         >
           <div v-if="fileList.length < 1">
             <a-icon type="plus"/>
@@ -56,6 +56,8 @@
     export default {
         data() {
             return {
+                fileKey:null,
+                fileValue:null,
                 type: false,
                 fileList: [],
                 previewVisible: false,
@@ -95,8 +97,9 @@
             handleCancel() {
                 this.previewVisible = false;
             },
-            Remove() {
+            Remove(file) {
                 this.fileList = [];
+                this.fileKey = null;
             },
             customRequest(file) {
                 const formData = new FormData();
@@ -120,6 +123,7 @@
                             this.fileList[0].status = "done";
                             this.fileList[0].url = Api.domain + data.data.fileName;
                             this.previewImage = Api.domain + data.data.fileName;
+                            this.fileKey = data.data.key;
                         } else {
                             this.$message.error("上传失败");
                         }
@@ -161,7 +165,7 @@
             getData() {
                 return new Promise((resolve, reject) => {
                     this.axios
-                        .get(Api.getProduct + '?total=0')
+                        .get(Api.getProduct)
                         .then(data => {
                             if (data.data.status) {
                                 resolve(
@@ -198,26 +202,43 @@
                     }
                 }
             },
+            getFile() {
+                if (this.fileKey != null) {
+                    return new Promise((resolve, reject) => {
+                        this.axios.post(Api.move, qs.stringify({
+                            key: this.fileKey,
+                        })).then((res) => {
+                            resolve(this.fileValue = res.data);
+                        });
+                    });
+                } else {
+                    return new Promise((resolve, reject) => {
+                        resolve();
+                    });
+                }
+            },
             /**
              * 修改
              */
             toEdit() {
-                let data = qs.stringify({
-                    title: this.name,
-                    position_id: this.positionId,
-                    picture: this.fileList.length == 0 ? null : this.fileList[0].url,
-                    link_type: this.linkTypeId,
-                    link_target: this.linkTarget
-                });
-                this.axios
-                    .post(Api.NavEdit + this.id, data)
-                    .then(data => {
-                        if (data.data.status) {
-                            this.$router.push({path: "/"});
-                        } else {
-                            this.$message.error("编辑失败");
-                        }
+                this.getFile().then(()=>{
+                    let data = qs.stringify({
+                        title: this.name,
+                        position_id: this.positionId,
+                        picture: this.fileValue === null ? this.fileKey === null && this.fileList.length != 0 ? this.fileList[0].url : null : Api.domain + this.fileValue,
+                        link_type: this.linkTypeId,
+                        link_target: this.linkTarget
                     });
+                    this.axios
+                        .post(Api.NavEdit + this.id, data)
+                        .then(data => {
+                            if (data.data.status) {
+                                this.$router.push({path: "/"});
+                            } else {
+                                this.$message.error(data.data.msg);
+                            }
+                        });
+                });
             }
         },
         /**
@@ -236,10 +257,10 @@
                         this.getData().then(() => {
                             this.getData2().then(() => {
                                 this.List = this.positionAndLinks[this.linkTypeId];
-                                if (this.data.link_type != 1) {
+                                if (Number(this.positionId) != 1) {
                                     this.type = true;
                                 } else {
-                                    this.type = false;
+                                    this.type = false
                                 }
                             });
                         });

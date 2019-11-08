@@ -1,22 +1,22 @@
 <template>
   <div class="Product-Create">
     <a-form>
-      <a-form-item label="名称" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+      <a-form-item label="名称" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
         <a-input
           v-model="name"
         />
       </a-form-item>
-      <a-form-item label="分类" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+      <a-form-item label="分类" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
         <a-select v-model="CateId" @change="changeCate(CateId)">
           <a-select-option v-for="(val,key) in cateData" v-model="val.id">
             {{val.name}}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item label="排序" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+      <a-form-item label="排序" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
         <a-input-number v-model="sort" :style="{'width':'100%'}"/>
       </a-form-item>
-      <a-form-item label="描述" :label-col="{ span: 1 }" :wrapper-col="{ span: 20 }">
+      <a-form-item label="描述" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
         <quill-editor
           v-model="content"
           ref="myQuillEditor"
@@ -27,27 +27,27 @@
       </a-form-item>
 
       <div class="div_box" v-for="(k, index) in form.getFieldValue('keys')" :key="k + 5">
-        <a-form-item label="标签类型" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+        <a-form-item label="标签类型" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
           <a-select v-model="TagId[k].id">
             <a-select-option v-for="(val,key) in tagType" v-model="key">
               {{val}}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="标签值" v-if="TagId[k].id == 1" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+        <a-form-item label="标签值" v-if="TagId[k].id == 1" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
           <a-date-picker @change="(date,dateString)=>onChangeDate(date,dateString,k)"/>
         </a-form-item>
-        <a-form-item label="标签值" v-else-if="TagId[k].id == 2" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+        <a-form-item label="标签值" v-else-if="TagId[k].id == 2" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
           <a-input v-model="TagValue[k].value"></a-input>
         </a-form-item>
-        <a-form-item label="标签值" v-else-if="TagId[k].id == 3" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+        <a-form-item label="标签值" v-else-if="TagId[k].id == 3" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
           <a-upload
             :customRequest="(file)=>customRequest(file,k)"
             listType="picture-card"
             @change="({fileList}) => handleChangeFile({fileList},k)"
-            :remove="Remove(k)"
+            :remove="(file)=>Remove(file,k)"
           >
-            <div v-if="types[k]">
+            <div v-if="TagValue[k].value == ''">
               <a-icon type="plus"/>
               <div class="ant-upload-text">Upload</div>
             </div>
@@ -75,20 +75,20 @@
       </div>
 
       <div class="div_box" v-for="(k, index) in form.getFieldValue('keys2')" :key="k + 10">
-        <a-form-item label="原价" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+        <a-form-item label="原价" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
           <a-input-number v-model="skuValues[k].original_price" :style="{'width':'100%'}"/>
         </a-form-item>
-        <a-form-item label="售价" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+        <a-form-item label="售价" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
           <a-input-number v-model="skuValues[k].price" :style="{'width':'100%'}"/>
         </a-form-item>
-        <a-form-item v-for="(val,key) in attrs" :key="key" :label="val" :label-col="{ span: 5 }"
-                     :wrapper-col="{ span: 12 }">
+        <a-form-item v-for="(val,key) in attrs" :key="key" :label="val" :label-col="{ span: 2 }"
+                     :wrapper-col="{ span: 20 }">
           <a-input v-model="skuValues[k].attrs[key]"></a-input>
         </a-form-item>
-        <a-form-item label="库存" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+        <a-form-item label="库存" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
           <a-input-number v-model="skuValues[k].quantity" :style="{'width':'100%'}"/>
         </a-form-item>
-        <a-form-item label="排序" :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+        <a-form-item label="排序" :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
           <a-input-number v-model="skuValues[k].sort" :style="{'width':'100%'}"/>
         </a-form-item>
         <a-icon
@@ -101,7 +101,7 @@
       </div>
 
       <div class="skuAdd">
-        <a-form-item :label-col="{ span: 5 }" :wrapper-col="{ span: 12 }">
+        <a-form-item :label-col="{ span: 2 }" :wrapper-col="{ span: 20 }">
           <a-button type="dashed" style="width: 60%" @click="add2">
             <a-icon type="plus"/>
             继续添加库存
@@ -124,7 +124,7 @@
     export default {
         data() {
             return {
-                types:[],
+                types: [],
                 id: 0,
                 id2: 0,
                 skuValues: [],
@@ -150,6 +150,8 @@
                 cateData: [],
                 CateId: '',
                 sort: 10,
+                tagObj: [],
+                paths: [],
             }
         },
         beforeCreate() {
@@ -177,15 +179,20 @@
             handleCancel() {
                 this.previewVisible = false;
             },
-            Remove(k) {
+            Remove(file, k) {
+                this.paths[k] = "";
+                this.TagValue[k].value = '';
                 this.fileList = null;
-                this.TagValue[k].value = null;
+                ///////////////////////////////////
+                // this.TagValue[k].value = null;// 坑货
+                ///////////////////////////////////
             },
             customRequest(file, k) {
                 const formData = new FormData();
                 formData.append('image', file.file);
-                this.toUpload(formData, k).then(()=>{
+                this.toUpload(formData, k).then(() => {
                     this.types[k] = false;
+                    this.getFile(k, this.TagValue[k].value);
                 });
             },
             handlePreview(file) {
@@ -205,7 +212,10 @@
                         {headers: {'Content-Type': 'multipart/form-data'}}
                     ).then((data) => {
                         if (data.data.status) {
-                            resolve(this.fileList[0].status = 'done', this.fileList[0].url = Api.domain + data.data.fileName, this.previewImage[0] = Api.domain + data.data.fileName, this.TagValue[k].value = Api.domain + data.data.fileName);
+                            resolve(this.fileList[0].status = 'done',
+                                this.fileList[0].url = Api.domain + data.data.fileName,
+                                this.previewImage[0] = Api.domain + data.data.fileName,
+                                this.TagValue[k].value = data.data.key);
                         } else {
                             this.$message.error('上传失败');
                         }
@@ -228,19 +238,35 @@
                     });
                 });
             },
+            getFile(k, key) {
+                return new Promise((resolve, reject) => {
+                    this.axios.post(Api.move, qs.stringify({
+                        key: key,
+                    })).then((res) => {
+                        resolve(this.paths[k] = res.data);
+                    });
+                });
+            },
             toCreate() {
                 let tagObj = [];
-                let skuObj = [];
                 this.TagId.forEach((val, key) => {
                     var len = Object.keys(val);
                     if (len.length != 0) {
-                        tagObj.push({
-                            tag_id: val.id,
-                            value: this.TagValue[key].value,
-                        });
+                        if (val.id == 3) {
+                            tagObj.push({
+                                tag_id: val.id,
+                                value: this.paths[key] != '' ? Api.domain + this.paths[key] : null,
+                            });
+                        } else {
+                            tagObj.push({
+                                tag_id: val.id,
+                                value: this.TagValue[key].value,
+                            });
+                        }
                     }
                 });
 
+                let skuObj = [];
                 this.skuValues.forEach((val, key) => {
                     var len = Object.keys(val);
 
@@ -249,13 +275,13 @@
                         val.attr2 = val.attrs[1] === undefined ? "" : val.attrs[1];
                         val.attr3 = val.attrs[2] === undefined ? "" : val.attrs[2];
                         skuObj.push({
-                            original_price:val.original_price,
-                            price:val.price,
-                            quantity:val.quantity,
-                            sort:val.sort,
-                            attr1:val.attr1,
-                            attr2:val.attr2,
-                            attr3:val.attr3,
+                            original_price: val.original_price,
+                            price: val.price,
+                            quantity: val.quantity,
+                            sort: val.sort,
+                            attr1: val.attr1,
+                            attr2: val.attr2,
+                            attr3: val.attr3,
                         })
                     }
                 });
@@ -273,12 +299,12 @@
                     if (res.data.status) {
                         this.$router.push({path: '/Product'});
                     } else {
-                        this.$message.error('添加失败');
+                        this.$message.error(res.data.msg);
                     }
                 });
             },
             remove(k) {
-                const { form } = this;
+                const {form} = this;
                 // can use data-binding to get
                 const keys = form.getFieldValue('keys');
                 // We need at least one passenger
@@ -293,7 +319,7 @@
                 });
             },
             remove2(k) {
-                const { form } = this;
+                const {form} = this;
                 // can use data-binding to get
                 const keys = form.getFieldValue('keys2');
                 // We need at least one passenger
@@ -319,7 +345,7 @@
                 });
                 this.TagValue.push({
                     'value': '',
-                })
+                });
 
                 form.setFieldsValue({
                     keys: nextKeys,
@@ -385,6 +411,6 @@
     transition: all 0.3s;
     position: absolute;
     top: 5px;
-    right: 25%;
+    right: 5%;
   }
 </style>

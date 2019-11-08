@@ -6,7 +6,7 @@ const getNav = ip + '/nav/getNav';
 //删除 导航
 const DelNav = ip + '/nav/del';
 //上传 文件
-const NavUpload = ip + '/nav/upload';
+const NavUpload = ip + '/upload';
 //导航 编辑
 const NavEdit = ip + '/nav/edit?id=';
 //商品数据
@@ -29,6 +29,17 @@ const ProductEdit = ip + '/product/edit';
 const ChangeShelf = ip + '/product/changeShelf';
 //商品 添加
 const ProductCreate = ip + '/product/create';
+//登录
+const Login = ip + '/Login';
+//注册
+const Register = ip + '/Register';
+//退出
+const Out = ip + '/Out';
+//删除标签
+const tagDel = ip + '/tagDel';
+//移动文件
+const move = ip + '/move';
+
 
 //全部抛出
 export default {
@@ -46,5 +57,10 @@ export default {
   ProductEdit: ProductEdit,
   ChangeShelf: ChangeShelf,
   ProductCreate: ProductCreate,
-  domain:domain
+  domain:domain,
+  Login:Login,
+  Register:Register,
+  Out:Out,
+  tagDel:tagDel,
+  move:move
 }

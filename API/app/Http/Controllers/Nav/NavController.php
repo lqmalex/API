@@ -8,33 +8,31 @@ use App\ProductModel;
 use http\Cookie;
 use Illuminate\Http\Request;
 use App\NavModel;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 use mysql_xdevapi\Exception;
 
-class NavController extends Controller{
+class NavController extends Controller
+{
     /**
      * 查询导航
      * @return false|string
      */
-    public function getNav(Request $request) {
+    public function getNav(Request $request)
+    {
         $NavModel = new NavModel();
         $perPage = 5;
         $columns = ['*'];
         $pageName = 'page';
         $currentPage = $request->page === null ? 1 : $request->page;
-        $res = $NavModel->where('status','!=','0')->paginate($perPage,$columns,$pageName,$currentPage);
+        $res = $NavModel->where('status', '!=', '0')->paginate($perPage, $columns, $pageName, $currentPage);
 
-        if (count($res) != 0) {
-            $info = [
-              'status' => true,
-              'data' => $res,
-            ];
-        } else {
-            $info = [
-                'status' => false,
-                'data' => null
-            ];
-        }
+        $info = [
+            'status' => true,
+            'data' => count($res) == 0 ? '暂无数据' : $res,
+        ];
+
         return $info;
     }
 
@@ -42,8 +40,9 @@ class NavController extends Controller{
      * 假删除
      * @param Request $request
      */
-    public function del(Request $request){
-        $res = (new NavModel())->where('id','=',$request->id)->update(['status'=>0]);
+    public function del(Request $request)
+    {
+        $res = (new NavModel())->where('id', '=', $request->id)->update(['status' => 0]);
 
         if ($res > 0) {
             $info = [
@@ -64,35 +63,81 @@ class NavController extends Controller{
      * @param Request $request
      * @return array|mixed
      */
-    public function edit(Request $request) {
+    public function edit(Request $request)
+    {
         if (!$request->isMethod('get')) {
-            if ($request->link_target != '') {
-                $model = (new NavModel())->find($request->id);
-                $model->title = $request->title;
-                $model->position_id = $request->position_id;
-                $model->picture = $request->picture;
-                $model->link_type = $request->link_type;
-                $model->link_target = $request->link_target;
-                $res = $model->save();
-
-                if ($res) {
-                    $info = [
-                        'status' => true,
-                    ];
-                } else {
-                    $info = [
-                        'status' => false,
-                    ];
-                }
-            } else {
-                $info = [
+            if (empty($request->title)) {
+                return [
                     'status' => false,
+                    'msg' => '名称不能为空'
                 ];
             }
 
+            if (empty($request->link_type)) {
+                return [
+                    'status' => false,
+                    'msg' => '链接类型不能为空'
+                ];
+            }
+
+            if (preg_match("/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/", $request->title)) {
+                return [
+                    'status' => false,
+                    'msg' => '不允许含有特殊字符',
+                ];
+            }
+
+            if (empty($request->link_target)) {
+                return [
+                    'status' => false,
+                    'msg' => '链接目标不能为空'
+                ];
+            }
+
+            if (!is_numeric($request->position_id)) {
+                return [
+                    'status' => false,
+                    'msg' => '位置id类型无效'
+                ];
+            }
+
+            if ($request->position_id > 4 || $request->position_id < 1) {
+                return [
+                    'status' => false,
+                    'msg' => '位置id无效'
+                ];
+            }
+
+            $model = (new NavModel())->find($request->id);
+            if (empty($model)) {
+                return [
+                    'status' => false,
+                    'msg' => '标签id无效'
+                ];
+            }
+
+            $model->title = $request->title;
+            $model->position_id = $request->position_id;
+            $model->picture = $request->picture;
+            $model->link_type = $request->link_type;
+            $model->link_target = $request->link_target;
+            $res = $model->save();
+
+            if ($res) {
+                $info = [
+                    'status' => true,
+                ];
+            } else {
+                $info = [
+                    'status' => false,
+                    'msg' => '编辑失败'
+                ];
+            }
+
+
             return $info;
         } else {
-            $res = (new NavModel())->where('id','=',$request->id)->where('status','!=','0')->get();
+            $res = (new NavModel())->where('id', '=', $request->id)->where('status', '!=', '0')->get();
 
             return $res;
         }
@@ -103,7 +148,50 @@ class NavController extends Controller{
      * @param Request $request
      * @return array
      */
-    public function create(Request $request) {
+    public function create(Request $request)
+    {
+        if (empty($request->title)) {
+            return [
+                'status' => false,
+                'msg' => '名称不能为空'
+            ];
+        }
+
+        if (empty($request->link_type)) {
+            return [
+                'status' => false,
+                'msg' => '链接类型不能为空'
+            ];
+        }
+
+        if (preg_match("/[\'.,:;*?~`!@#$%^&+=)(<>{}]|\]|\[|\/|\\\|\"|\|/", $request->title)) {
+            return [
+                'status' => false,
+                'msg' => '不允许含有特殊字符',
+            ];
+        }
+
+        if (empty($request->link_target)) {
+            return [
+                'status' => false,
+                'msg' => '链接目标不能为空'
+            ];
+        }
+
+        if (!is_numeric($request->position_id)) {
+            return [
+                'status' => false,
+                'msg' => '位置id类型无效'
+            ];
+        }
+
+        if ($request->position_id > 4 || $request->position_id < 1) {
+            return [
+                'status' => false,
+                'msg' => '位置id无效'
+            ];
+        }
+
         $model = new NavModel();
         $model->title = $request->title;
         $model->position_id = $request->position_id;
@@ -119,40 +207,12 @@ class NavController extends Controller{
             ];
         } else {
             $info = [
-                "status" => false
+                "status" => false,
+                "msg" => '添加失败'
             ];
         }
+
 
         return $info;
     }
-
-    /**
-     * 上传文件
-     * @param Request $request
-     * @return array
-     */
-    public function upload(Request $request) {
-        $file = $request->file('image');    //获取文件所有信息
-
-        if($file ->isValid()) { //判断文件是否存在
-            $clientName = $file->getClientOriginalName();    //客户端文件名称..
-            $entension = $file->getClientOriginalExtension();   //上传文件的后缀.
-            $newName = md5(date('Ymdhis') . $clientName) . "." . $entension;    //定义      上传文件的新名称
-            $path = $file->move('upload/Image', $newName);    //把缓存文件移动到指定文件夹
-        }
-
-        if (file_exists('upload/Image/'.$newName)) {
-            $info = [
-                "status"=>true,
-                "fileName"=>'upload/Image/'.$newName
-            ];
-        } else {
-            $info = [
-                "status"=>false,
-            ];
-        }
-
-        return $info;
-    }
-
 }

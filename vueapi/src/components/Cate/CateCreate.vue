@@ -55,7 +55,7 @@
                     if (data.data.status) {
                         this.$router.push('/Cate');
                     } else {
-                        this.$message.error('添加失败');
+                        this.$message.error(data.data.msg);
                     }
                 });
             }

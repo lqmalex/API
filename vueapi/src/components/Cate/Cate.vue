@@ -67,7 +67,7 @@
           <a @click="() => save(record.key)">执行编辑</a>
           <a @click="() => cancel(record.key)">取消编辑</a>
         </span>
-          <span v-else>
+        <span v-else>
           <a @click="() => edit(record.key)">编辑</a>
         </span>
       </template>
@@ -181,9 +181,9 @@
                                     id: val.id,
                                     name: val.name,
                                     sort: val.sort,
-                                    property1: propertys.attr1 === undefined || propertys.attr1 === null ? null : propertys.attr1,
-                                    property2: propertys.attr2 === undefined || propertys.attr2 === null ? null : propertys.attr2,
-                                    property3: propertys.attr3 === undefined || propertys.attr3 === null ? null : propertys.attr3,
+                                    property1: propertys.attr1,
+                                    property2: propertys.attr2,
+                                    property3: propertys.attr3,
                                     created_at: val.created_at,
                                     updated_at: val.updated_at,
                                 }
@@ -261,7 +261,7 @@
                     if (data.data.status) {
                         this.$message.info('编辑成功');
                     } else {
-                        this.$message.error('编辑失败');
+                        this.$message.error(data.data.msg);
                     }
                 });
             },

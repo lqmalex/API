@@ -10,13 +10,15 @@
 | contains the "web" middleware group. Now create something great!
 |
 */
+//use Illuminate\Support\Facades\Request;
 
 Route::get('/', function () {
-    return url()->previous();
-//    return view('welcome');
+//    return url()->previous();
+    return view('welcome');
 });
 
 Route::get('/aa', function () {
 //    return $_SERVER;
+//    return Request::path();
 //    return view('welcome');
 });

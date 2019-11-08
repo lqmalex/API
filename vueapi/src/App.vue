@@ -1,12 +1,13 @@
 <template>
   <div id="app">
-    <Index v-if="isRouterAlive"></Index>
+    <Index v-if="isRouterAlive && this.$route.path != '/Login' && this.$route.path != '/Register'"></Index>
+    <User v-else></User>
   </div>
 </template>
 
 <script>
   import Index from './views/Index';
-
+  import User from "./views/User";
   export default {
       data(){
           return  {
@@ -14,7 +15,8 @@
           }
       },
       components:{
-          Index
+          Index,
+          User
       },
       methods:{
           /**
@@ -25,7 +27,17 @@
               this.$nextTick(function() {
                   this.isRouterAlive = true;
               });
+          },
+          getToken() {
+              let token = localStorage.getItem('token');
+
+              if (token === null || token == 'null') {
+                  this.$router.push('/Login');
+              }
           }
+      },
+      created(){
+        this.getToken();
       },
       /**
        * 将reload抛出
